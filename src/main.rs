@@ -1,78 +1,9 @@
-// // use reqwest;
-// // use tokio;
 
-// // async fn get() -> Result<(), reqwest::Error> {
-// // 	let response = reqwest::get("https://example.com")
-// // 		.await?;
-
-// // 	if response.status().is_success() {
-// // 		let body = response.text().await?;
-// // 		println!("{}", body);
-// // 	} else {
-// // 		println!("Request failed with status: {:?}", response.status());
-// // 	}
-
-// // 	Ok(())
-// // }
-
-// // // #[tokio::main]
-// // fn main() -> Result<(), reqwest::Error> {
-// // 	tokio::runtime::Builder::new_current_thread()
-// // 		.enable_all()
-// // 		.build()
-// // 		.unwrap()
-// // 		.block_on(get())	
-// // }
-// use reqwest::blocking::Client;
-// use url::Url;
-// // use robots::RobotsTxt;
-// use robots_txt::Robots;
-
-// struct Crawler {
-//     client: Client,
-//     robots_txt: Robots<'static>,
-// }
-
-// impl Crawler {
-//     fn new() -> Self {
-//         Self {
-//             client: Client::new(),
-//             robots_txt: Robots::new("https://example.com/robots.txt"),
-//         }
-//     }
-
-//     fn crawl(&mut self, url: &Url) {
-//         // Check the robots.txt file to see if we are allowed to crawl this page.
-//         if !self.robots_txt.is_allowed(url) {
-//             return;
-//         }
-
-//         // Make a request to the page.
-//         let response = self.client.get(url).unwrap();
-
-//         // Parse the links on the page.
-//         let links = response.headers().get("Link").unwrap();
-//         for link in links.iter() {
-//             // Parse the link into a Url object.
-//             let link_url = Url::parse(link).unwrap();
-
-//             // Add the link to the queue of URLs to crawl.
-//             self.crawl(&link_url);
-//         }
-//     }
-// }
-
-// fn main() {
-//     let mut crawler = Crawler::new();
-
-//     // Add the starting URL to the queue of URLs to crawl.
-//     crawler.crawl(&Url::parse("https://example.com").unwrap());
-
-//     // Start crawling the web.
-//     // crawler.crawl();
-// }
-
-// use robots_txt::{Robots, matcher::SimpleMatcher};
+use robots_txt::{Robots, matcher::SimpleMatcher, parse};
+use reqwest::{self, header::HeaderValue};
+use scraper::{Html, Selector};
+use url::Url;
+use reqwest::{Response, Request};
 
 // static ROBOTS: &'static str = r#"
 
@@ -84,36 +15,7 @@
 // Disallow:
 
 // "#;
-
-// fn main() {
-//     let robots = Robots::from_str_lossy(ROBOTS);
-
-//     let matcher = SimpleMatcher::new(&robots.choose_section("NoName Bot").rules);
-//     println!("{}",matcher.check_path("/some/page"));
-//     println!("{}",matcher.check_path("/cyberworld/welcome.html"));
-//     println!("{}",matcher.check_path("/cyberworld/map/object.html"));
-
-//     let matcher = SimpleMatcher::new(&robots.choose_section("Mozilla/5.0; CyberMapper v. 3.14").rules);
-//     println!("{}",matcher.check_path("/some/page"));
-//     println!("{}",matcher.check_path("/cyberworld/welcome.html"));
-//     println!("{}",matcher.check_path("/cyberworld/map/object.html"));
-// }
-
-
-use robots_txt::{Robots, matcher::SimpleMatcher};
-use reqwest::{self, header::HeaderValue};
-use url::Url;
-
-static ROBOTS: &'static str = r#"
-
-# robots.txt for http://www.site.com
-User-Agent: *
-Disallow: /cyberworld/map/ # this is an infinite virtual URL space
-# Cybermapper knows where to go
-User-Agent: cybermapper
-Disallow:
-
-"#;
+static ROBOT_TXT: &'static str = "https://dawn.com/robots.txt";
 
 struct Crawler<'z> {
     robots: Robots<'z>,
@@ -121,18 +23,31 @@ struct Crawler<'z> {
     disallowed_links: Vec<Url>,
 }
 
+// async fn get_robots_txt(domain: &str) -> String {
+// 	// Fetch and parse the robots.txt file for the domain
+// 	let robots_url = format!("{}/robots.txt", domain);
+// 	let response = get_request(&Url::parse(&robots_url).unwrap()).await.unwrap();
+// 	let body = response.text().await.unwrap();
+// 	body
+// }
+
 impl<'z> Crawler<'z> {
     fn new() -> Self {
         Self {
-            robots: Robots::from_str_lossy(ROBOTS),
+            robots: Robots::from_str_lossy(ROBOT_TXT),
             allowed_links: Vec::new(),
             disallowed_links: Vec::new(),
         }
     }
 
+	
+	
+
+
     async fn crawl(&mut self, url: &Url) {
         // Make a request to the page.
-        let response = reqwest::get(url.as_str()).await.unwrap();
+        let response = get_request(url).await.unwrap();
+		
 
         // Parse the links on the page.
         let links = response.headers().get("Link").unwrap();
@@ -179,23 +94,154 @@ impl<'z> Crawler<'z> {
     }
 }
 
-fn main() {
+
+async fn get_request(url: &Url) -> Option<Response> {
+    let response = reqwest::get(url.as_str()).await.unwrap();
+
+    if response.status().is_success() {
+        Some(response)
+    } else {
+        println!("Request failed with status: {:?}", response.status());
+        None
+    }
+}
+
+async fn run_crawler() {
+	// get_request().await;
     let mut crawler = Crawler::new();
 
     // Add the starting URL to the queue of URLs to crawl.
-    crawler.crawl(&Url::parse("https://example.com").unwrap());
+    crawler.crawl(&Url::parse("https://google.com/robots.txt").unwrap()).await;
 
     // Get the allowed and disallowed links.
     let allowed_links = crawler.get_allowed_links();
     let disallowed_links = crawler.get_disallowed_links();
 
     // Print the allowed links to the console.
+	println!("allowed links: ");
     for link in allowed_links {
         println!("{}", link);
     }
 
     // Print the disallowed links to the console.
+	println!("disallowed links: ");
     for link in disallowed_links {
         println!("{}", link);
+    }
+}
+
+fn main() {
+    // let mut crawler = Crawler::new();
+
+    // Add the starting URL to the queue of URLs to crawl.
+    // crawler.crawl(&Url::parse("https://example.com").unwrap()).await;
+	
+    // Get the allowed and disallowed links.
+    // let allowed_links = crawler.get_allowed_links();
+    // let disallowed_links = crawler.get_disallowed_links();
+
+    // // Print the allowed links to the console.
+    // for link in allowed_links {
+	// 	println!("{}", link);
+    // }
+	
+    // // Print the disallowed links to the console.
+    // for link in disallowed_links {
+	// 	println!("{}", link);
+    // }
+	// tokio::runtime::Runtime::new().unwrap().block_on(run_crawler());
+	// get_request().await;
+	// let url = Url::parse("https://dawn.com").unwrap();
+	let url = Url::parse("https://www.dawn.com/news/1782012/abrahams-seed").unwrap();
+	let my_vec = tokio::runtime::Runtime::new().unwrap().block_on(get_links_from_website(url)).unwrap();
+	
+	let robots = Robots::from_str_lossy(ROBOT_TXT);
+	let rules = &robots.choose_section("*").rules;
+	let matcher = SimpleMatcher::new(&rules);
+
+	let mut allowed_links = Vec::new();
+	let mut disallowed_links = Vec::new();
+	
+	println!("links: ");
+	for link in my_vec {
+		let curr_link = link.clone();
+		let allowed = matcher.check_path(&link.as_str());
+		if allowed {
+			// Add the link to the allowed vector.
+			allowed_links.push(link);
+		} else {
+			// Add the link to the disallowed vector.
+			disallowed_links.push(link);
+		}
+		
+		println!("{} {}", allowed, curr_link);
+	
+	}
+}
+fn find_links_in_html(html: &str) -> Vec<String> {//html: &str
+	// let html = r#"
+	// 	<html>
+	// 	<head>
+	// 	<title>Example</title>
+	// 	</head>
+	// 	<body>
+	// 	<a href="https://google.com">Google</a>
+	// 	<a href="https://example.com">Example</a>
+	// 	</body>
+	// 	</html>
+	// "#;
+
+	// let response = match tokio::runtime::Runtime::new().unwrap().block_on(get_request_2(&Url::parse("https://google.com").unwrap())) {
+	// 	 Some(res)=> res, 
+	// 	 None => panic!("Error"),
+	// };
+
+	// let html = tokio::runtime::Runtime::new().unwrap().block_on(response.text()).unwrap();
+
+	
+	let mut links = Vec::new();
+
+    let parser = Html::parse_document(html);
+    let selector = Selector::parse("a").expect("Could not parse selector");
+	// let s = selector.attr("href");
+    for element in parser.select(&selector) {
+        links.push(element.value().attr("href").unwrap().to_string());
+    }
+
+    links
+
+}
+
+async fn get_request_2(url: &Url) -> Option<Response> {
+    let response = reqwest::get(url.as_str()).await.unwrap();
+
+    if response.status().is_success() {
+        Some(response)
+    } else {
+        println!("Request failed with status: {:?}", response.status());
+        None
+    }
+}
+
+// use scraper::{Html, Selector};
+use reqwest::{Client};
+// use url::Url;
+
+async fn get_links_from_website(url: Url) -> Option<Vec<String>> {
+    // let client = Client::new();
+    // let response = client.get(url);
+
+	let client = Client::new();
+
+    let request = Request::new(reqwest::Method::GET, url);
+    let response = client.execute(request).await.unwrap();
+
+    if response.status().is_success() {
+        let html = response.text().await.unwrap();
+        let links = find_links_in_html(&html);
+
+        Some(links)
+    } else {
+        None
     }
 }
