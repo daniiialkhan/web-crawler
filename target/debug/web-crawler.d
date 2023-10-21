@@ -1,1 +1,1 @@
-D:\Data2\GitHub\ Repositories\web-crawler\target\debug\web-crawler.exe: D:\Data2\GitHub\ Repositories\web-crawler\src\main.rs
+D:\Data2\GitHub\ Repositories\web-crawler\target\debug\web-crawler.exe: D:\Data2\GitHub\ Repositories\web-crawler\src\crawler.rs D:\Data2\GitHub\ Repositories\web-crawler\src\links_and_files.rs D:\Data2\GitHub\ Repositories\web-crawler\src\main.rs
