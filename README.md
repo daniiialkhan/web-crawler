@@ -5,9 +5,9 @@ This repository contains a web crawler implemented in the Rust programming langu
 Features:
 
     🕸️ Crawls websites of any size and complexity
-    🕷️ Supports multiple concurrent requests
+    🕷️ Supports multiple concurrent requests (to be added in the near future!)
     🦀️ Written in Rust for performance and reliability
-    💡 Easy to use and customize
+    💡 Easy to use and customize (GUI available soon!)
 
 Use cases:
 
@@ -24,9 +24,9 @@ Customization:
 
 The crawler can be customized to meet your specific needs. For example, you can change the following settings:
 
-    The websites to crawl
-    The depth of the crawl
-    The types of data to extract
+    - The websites to crawl
+    - The depth of the crawl
+    - The category of data to extract
 
 For more information:
 
