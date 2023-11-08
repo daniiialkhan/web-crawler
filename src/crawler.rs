@@ -14,8 +14,8 @@ pub mod crawler{
 	use url::Url;
 	use reqwest::{Response, Request};
 	use csv::Writer;
-	use std::thread;
-	use std::sync::Mutex;
+	// use std::thread;
+	// use std::sync::Mutex;
 
 	use crate::links_and_files::links_and_files::*;
 	pub struct Crawler<'z> {
@@ -87,36 +87,36 @@ pub mod crawler{
 		}
 
 		
-	pub async fn make_request(&mut self, url: Url) -> Option<Vec<String>> {
-		
-		// Make a request to the URL, receieve a response.
-		let client = Client::new();
-		let request = Request::new(reqwest::Method::GET, url);
-		let response = match client.execute(request).await {
-			Ok(response) => {
-				println!("Response received successfully===");
-				response
-			},
-			Err(_) => {
-				println!("Error making request to url====");
-				return None
-			},
-		};
+		pub async fn make_request(&mut self, url: Url) -> Option<Vec<String>> {
+			
+			// Make a request to the URL, receieve a response.
+			let client = Client::new();
+			let request = Request::new(reqwest::Method::GET, url);
+			let response = match client.execute(request).await {
+				Ok(response) => {
+					println!("Response received successfully===");
+					response
+				},
+				Err(_) => {
+					println!("Error making request to url====");
+					return None
+				},
+			};
 
-		// If the response is successful, get the links from the page.
-		if response.status().is_success() {
-			let html = response.text().await.unwrap_or_else(|_| {
-				println!("Error getting text from response");
-				"".to_string()
-			});
-			let links = self.links_from_html(&html);
+			// If the response is successful, get the links from the page.
+			if response.status().is_success() {
+				let html = response.text().await.unwrap_or_else(|_| {
+					println!("Error getting text from response");
+					"".to_string()
+				});
+				let links = self.links_from_html(&html);
 
-			Some(links)
-		} else {
-			None
+				Some(links)
+			} else {
+				None
+			}
+
 		}
-
-	}
 
 		fn links_from_html(&mut self, html: &str) -> Vec<String> {
 			
@@ -137,7 +137,7 @@ pub mod crawler{
 	
 }
 
-pub async fn run_crawler(depth :u8) -> Result<(), std::io::Error> {
+pub async fn run_crawler(depth :u8, domain:&str) -> Result<(), std::io::Error> {
 
 	if depth == 0 {
 		return Ok(());
@@ -145,7 +145,7 @@ pub async fn run_crawler(depth :u8) -> Result<(), std::io::Error> {
 	
 	let timestamp = get_timestamp();
 
-	let domain = "https://www.dawn.com";
+	// let domain = "https://www.dawn.com";
 	let news = "https://www.dawn.com/news";
 
 	let robots_txt = get_robots_txt(domain).await; // get robots txt for the domain
